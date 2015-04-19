@@ -25,11 +25,14 @@ type DNSRecords struct {
 }
 
 func PrintRecords(records []DNSRecord) {
+	fmt.Printf("Type\t\tSubdomain\tContent\n")
+	fmt.Printf("-----\t\t--------\t-------\n")
+
 	for _, record := range records {
 		fmt.Printf(
-			"%s %s %s\n",
-			record.Subdomain,
+			"%-12s\t%-12s\t%-12s\n",
 			record.Type,
+			record.Subdomain,
 			record.Content,
 		)
 	}
