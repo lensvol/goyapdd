@@ -19,7 +19,7 @@ type DNSRecord struct {
 	Type      string
 }
 
-type DNSRecords struct {
+type ListDNSRecordsResponse struct {
 	Records []DNSRecord
 	Success string
 }
@@ -38,29 +38,45 @@ func PrintRecords(records []DNSRecord) {
 	}
 }
 
-func main() {
-	pddTokenPtr := flag.String("pdd-token", "<auth token>", "PDD authenthication ticket.")
-	domainPtr := flag.String("domain", "<domain>", "Domain name.")
-	flag.Parse()
-
+func RetrieveDomainRecords(apiURL string, pddToken string, domain string) ([]DNSRecord, error) {
 	client := &http.Client{}
-	req, _ := http.NewRequest("GET", "https://pddimp.yandex.ru/api2/admin/dns/list", nil)
-	req.Header.Set("PddToken", *pddTokenPtr)
+	req, _ := http.NewRequest(
+		"GET",
+		fmt.Sprintf("%s/api2/admin/dns/list", apiURL),
+		nil)
+	req.Header.Set("PddToken", pddToken)
 
 	values := req.URL.Query()
-	values.Add("domain", *domainPtr)
+	values.Add("domain", domain)
 	req.URL.RawQuery = values.Encode()
 
 	resp, err := client.Do(req)
 
 	if err != nil {
-		panic(err)
+		return nil, err
 	}
 	body, err := ioutil.ReadAll(resp.Body)
-
-	var container DNSRecords
-	err = json.Unmarshal(body, &container)
-	PrintRecords(container.Records)
-
 	defer resp.Body.Close()
+
+	var container ListDNSRecordsResponse
+	err = json.Unmarshal(body, &container)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return container.Records, nil
+}
+
+func main() {
+	pddTokenPtr := flag.String("pdd-token", "<auth token>", "PDD authenthication ticket.")
+	domainPtr := flag.String("domain", "<domain>", "Domain name.")
+	flag.Parse()
+
+	dnsRecords, err := RetrieveDomainRecords("https://pddimp.yandex.ru", *pddTokenPtr, *domainPtr)
+	if err != nil {
+		panic(err)
+	}
+
+	PrintRecords(dnsRecords)
 }
