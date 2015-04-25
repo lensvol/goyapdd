@@ -8,11 +8,13 @@ import (
 	"net/http"
 )
 
+type PriorityValue int64
+
 type DNSRecord struct {
 	Content   string
 	Domain    string
 	FQDN      string
-	Priority  int64
+	Priority  PriorityValue
 	TTL       int64
 	Subdomain string
 	Record_id int64
@@ -22,6 +24,20 @@ type DNSRecord struct {
 type ListDNSRecordsResponse struct {
 	Records []DNSRecord
 	Success string
+}
+
+func (p *PriorityValue) UnmarshalJSON(b []byte) (err error) {
+	s, n := "foobar", uint64(0)
+	if err = json.Unmarshal(b, &s); err == nil {
+		*p = 0
+		return nil
+	}
+
+	if err = json.Unmarshal(b, &n); err == nil {
+		_ = "breakpoint"
+		*p = PriorityValue(n)
+	}
+	return nil
 }
 
 func PrintRecords(records []DNSRecord) {

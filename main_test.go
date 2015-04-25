@@ -24,6 +24,16 @@ func TestRetrieveRecords(t *testing.T) {
             "subdomain": "test",
             "content": "192.168.1.1",
             "priority": 500
+        },
+        {
+            "record_id": 2,
+            "type": "A",
+            "domain": "testdomain.ru",
+            "fqdn": "testdomain.ru",
+            "ttl": 20,
+            "subdomain": "test",
+            "content": "192.168.1.1",
+            "priority": ""
         }
     ],
     "success": "true"
@@ -37,8 +47,8 @@ func TestRetrieveRecords(t *testing.T) {
 		panic(err)
 	}
 
-	if len(records) != 1 {
-		t.Error("Only one record should be returned.")
+	if len(records) != 2 {
+		t.Error("Exactly two records should be returned.")
 	}
 
 	r := records[0]
@@ -50,5 +60,7 @@ func TestRetrieveRecords(t *testing.T) {
 	assert.Equal(t, r.FQDN, "testdomain.ru")
 	assert.Equal(t, r.Subdomain, "test")
 	assert.Equal(t, r.Content, "192.168.1.1")
-	assert.Equal(t, r.Priority, 500)
+	assert.Equal(t, 500, r.Priority)
+
+	assert.Equal(t, records[1].Priority, 0)
 }
