@@ -84,15 +84,42 @@ func RetrieveDomainRecords(apiURL string, pddToken string, domain string) ([]DNS
 	return container.Records, nil
 }
 
+func Contains(a string, list []string) bool {
+	for _, b := range list {
+		if b == a {
+			return true
+		}
+	}
+	return false
+}
+
+func FilterRecordsByType(records []DNSRecord, types []string) []DNSRecord {
+	var approved_records []DNSRecord
+
+	for _, r := range records {
+		if Contains(r.Type, types) {
+			approved_records = append(approved_records, r)
+		}
+	}
+	return approved_records
+}
+
 func main() {
 	pddTokenPtr := flag.String("pdd-token", "<auth token>", "PDD authenthication ticket.")
 	domainPtr := flag.String("domain", "<domain>", "Domain name.")
+	skipTxtFlag := flag.Bool("skip-txt", false, "Skip TXT records.")
 	flag.Parse()
+
+	allowed_types := []string{"A", "NS", "MX", "SRV"}
+	if *skipTxtFlag != true {
+		allowed_types = append(allowed_types, "TXT")
+	}
 
 	dnsRecords, err := RetrieveDomainRecords("https://pddimp.yandex.ru", *pddTokenPtr, *domainPtr)
 	if err != nil {
 		panic(err)
 	}
 
+	dnsRecords = FilterRecordsByType(dnsRecords, allowed_types)
 	PrintRecords(dnsRecords)
 }
