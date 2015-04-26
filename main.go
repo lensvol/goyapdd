@@ -11,14 +11,14 @@ import (
 type PriorityValue int64
 
 type DNSRecord struct {
+	Record_id int64
+	Type      string
 	Content   string
 	Domain    string
 	FQDN      string
 	Priority  PriorityValue
 	TTL       int64
 	Subdomain string
-	Record_id int64
-	Type      string
 }
 
 type ListDNSRecordsResponse struct {

@@ -47,9 +47,7 @@ func TestRetrieveRecords(t *testing.T) {
 		panic(err)
 	}
 
-	if len(records) != 2 {
-		t.Error("Exactly two records should be returned.")
-	}
+	assert.Equal(t, len(records), 2, "Exactly two records are expected.")
 
 	r := records[0]
 
@@ -63,4 +61,17 @@ func TestRetrieveRecords(t *testing.T) {
 	assert.Equal(t, 500, r.Priority)
 
 	assert.Equal(t, records[1].Priority, 0)
+}
+
+func TestFilterRecordsByType(t *testing.T) {
+	records := []DNSRecord{
+		DNSRecord{1, "A", "", "test.com", "www.test.com", 0, 100, "www"},
+		DNSRecord{2, "MX", "", "test.com", "www.test.com", 0, 100, "www"},
+		DNSRecord{3, "TXT", "", "test.com", "www.test.com", 0, 100, "www"},
+	}
+
+	filtered := FilterRecordsByType(records, []string{"MX", "A"})
+	assert.Equal(t, len(filtered), 2, "Only two records are expected.")
+	assert.Equal(t, filtered[0].Type, "A")
+	assert.Equal(t, filtered[1].Type, "MX")
 }
