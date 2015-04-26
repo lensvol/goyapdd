@@ -6,9 +6,12 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"sort"
+	"strings"
 )
 
 type PriorityValue int64
+type DNSRecords []DNSRecord
 
 type DNSRecord struct {
 	Record_id int64
@@ -22,8 +25,18 @@ type DNSRecord struct {
 }
 
 type ListDNSRecordsResponse struct {
-	Records []DNSRecord
+	Records DNSRecords
 	Success string
+}
+
+func (r DNSRecords) Len() int {
+	return len(r)
+}
+func (r DNSRecords) Swap(i, j int) {
+	r[i], r[j] = r[j], r[i]
+}
+func (r DNSRecords) Less(i, j int) bool {
+	return r[i].Record_id < r[j].Record_id
 }
 
 func (p *PriorityValue) UnmarshalJSON(b []byte) (err error) {
@@ -41,12 +54,13 @@ func (p *PriorityValue) UnmarshalJSON(b []byte) (err error) {
 }
 
 func PrintRecords(records []DNSRecord) {
-	fmt.Printf("Type\t\tSubdomain\tContent\n")
-	fmt.Printf("-----\t\t--------\t-------\n")
+	fmt.Printf("ID\t\tType\t\tSubdomain\tContent\n")
+	fmt.Printf("--------\t-----\t\t--------\t-------\n")
 
 	for _, record := range records {
 		fmt.Printf(
-			"%-12s\t%-12s\t%-12s\n",
+			"%-12d\t%-12s\t%-12s\t%-12s\n",
+			record.Record_id,
 			record.Type,
 			record.Subdomain,
 			record.Content,
@@ -107,12 +121,15 @@ func FilterRecordsByType(records []DNSRecord, types []string) []DNSRecord {
 func main() {
 	pddTokenPtr := flag.String("pdd-token", "<auth token>", "PDD authenthication ticket.")
 	domainPtr := flag.String("domain", "<domain>", "Domain name.")
-	skipTxtFlag := flag.Bool("skip-txt", false, "Skip TXT records.")
+	recTypesPtr := flag.String("filter-types", "A,MX,NS,SRV,TXT", "Filter types.")
 	flag.Parse()
 
-	allowed_types := []string{"A", "NS", "MX", "SRV"}
-	if *skipTxtFlag != true {
-		allowed_types = append(allowed_types, "TXT")
+	var allowed_types []string
+
+	if recTypesPtr != nil && len(*recTypesPtr) > 0 {
+		allowed_types = strings.Split(*recTypesPtr, ",")
+	} else {
+		allowed_types = []string{"A", "MX", "SRV", "NS", "TXT"}
 	}
 
 	dnsRecords, err := RetrieveDomainRecords("https://pddimp.yandex.ru", *pddTokenPtr, *domainPtr)
@@ -120,6 +137,7 @@ func main() {
 		panic(err)
 	}
 
+	sort.Sort(DNSRecords(dnsRecords))
 	dnsRecords = FilterRecordsByType(dnsRecords, allowed_types)
 	PrintRecords(dnsRecords)
 }
